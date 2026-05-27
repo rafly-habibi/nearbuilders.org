@@ -7,21 +7,11 @@
 
 <h1 style="font-size: 4.25rem; font-weight: 800; line-height: 1; margin: 0;">NEAR Builders</h1>
 
-<img src="ui/src/assets/under-construction.gif" alt="NEAR Builders" width="380" />
-
 </div>
 
-The open platform for builders on NEAR — discover builders, showcase projects, and explore on-chain apps. Built on [everything.dev](https://everything.dev) as a tenant runtime, composed via [Module Federation](https://module-federation.io/) and [every-plugin](https://plugin.everything.dev/), running on [NEAR Protocol](https://near.dev/).
+The open platform for builders on NEAR — discover builders, showcase projects, and get them funded. Built on [everything.dev](https://everything.dev) as a tenant runtime, composed via [Module Federation](https://module-federation.io/) and [every-plugin](https://plugin.everything.dev/), running on [NEAR Protocol](https://near.dev/).
 
-NEAR Builders extends the `everything.dev` host at `bos://dev.everything.near/everything.dev`. The shared host, API shell, and auth system are inherited. This repository provides the UI, three domain plugins, and the runtime configuration that define the nearbuilders.org experience. Changing `bos.config.json` changes what loads — no rebuild needed for URL updates.
-
-## Quick Start
-
-```bash
-bunx everything-dev@latest init
-```
-
-Or for this repository specifically:
+## Getting Started
 
 ```bash
 git clone https://github.com/nearbuilders/everything-dev.git
@@ -45,235 +35,28 @@ bos://dev.everything.near/everything.dev    ← parent platform (host, auth, API
 
 **What nearbuilders.org provides:**
 
-- **Builder profiles** — A curated directory of NEAR builders with moderation, skills, and social links
-- **Projects & ideas** — A ranked project board with upvoting, markdown editing, and GitHub integration
-- **App discovery** — A FastKV-based registry for browsing, inspecting, and publishing on-chain runtime apps
+- **Builders** — A curated directory of NEAR builders with moderation, skills, and social links
+- **Projects** — A ranked project board with upvoting, markdown editing, and GitHub integration
 - **Custom UI** — Branding, navigation, and pages tailored for the builder community
 
-**What nearbuilders.org inherits from everything.dev:**
+## Builders
 
-- Host server (Hono.js, Module Federation, SSR)
-- Auth system (Better-Auth, NEAR SIWN, organizations, API keys)
-- API shell (oRPC contracts, Effect services, plugin composition)
-- CLI tooling (`bos` / `everything-dev`)
-- Shared dependencies (React, TanStack Router, TanStack Query, Drizzle)
+A curated directory of NEAR builders. Every builder gets a profile — skills, social links, NEAR Social cross-referencing, and on-chain verification. Admin moderation (pending → approved → rejected) keeps the directory high-signal.
 
-## Why
+Builder profiles are the connective tissue of the ecosystem. They make builders discoverable, make past work verifiable, and make it easy for projects and teams to find the right people.
 
-Three problems keep NEAR builders from finding each other and getting their work seen:
+## Projects
 
-1. **Discovery is fragmented** — builders, projects, and on-chain apps live in different places with no unified directory.
-2. **Showcasing requires custom infra** — every team rebuilds profiles, project pages, and app catalogs from scratch.
-3. **On-chain work is invisible** — published runtimes and builder accomplishments are hard to browse or verify.
+A project dashboard where builders pitch their work for funding and NEAR Legion members request projects they want built.
 
-NEAR Builders solves all three in a single runtime-composed application. Builder profiles are curated with admin review. Projects and ideas get upvote ranking and markdown editing. Published apps are discoverable through a FastKV registry with on-chain metadata. And because it runs on the everything.dev tenant model, none of this requires rebuilding the platform.
+But it's more than a pitch board:
 
-**Discover builders. Ship projects. Browse apps. All on NEAR.**
+- **Hackathon project database** — Every past hackathon project in one place, not lost to event pages that disappear. A living source of potential projects and teams worth continuing.
+- **Community-upgraded ideas** — Ideas get upvoted, refined, and matched with builders who can execute them. The best surface organically.
+- **Talent & team retention** — Hackathon teams that worked well together stay discoverable. Good combos persist, not just good projects.
+- **Make the most of hackathons** — The energy and output from every event feeds back into the platform, so nothing gets lost and everything compounds.
 
-## CLI Commands
-
-`everything-dev` is the runtime package and CLI. `bos` is a command alias. See [AGENTS.md](./AGENTS.md) for the quick reference and [LLM.txt](./LLM.txt) for the full technical guide.
-
-### Development
-
-```bash
-bos dev --host remote   # Remote host, local UI + API (typical for tenant development)
-bos dev --ui remote     # Isolate API work
-bos dev --api remote    # Isolate UI work
-bos dev                 # Full local, client shell by default
-bos dev --ssr           # Opt into local SSR
-```
-
-### Production
-
-```bash
-bos start --no-interactive   # All remotes, production URLs
-```
-
-### Build & Publish
-
-```bash
-bos build               # Build all packages (updates bos.config.json)
-bos publish             # Publish config to the FastKV registry
-bos publish --deploy    # Build/deploy all workspaces, then publish
-bos sync                # Sync from parent runtime (everything.dev)
-```
-
-### Project Management
-
-```bash
-bos info                # Show configuration
-bos status              # Check remote health
-bos clean               # Clean build artifacts
-```
-
-## Development Workflow
-
-### Making Changes
-
-- **UI Changes**: Edit `ui/src/` → hot reload automatically → publish with `bos publish --deploy`
-- **Plugin Changes**: Edit `plugins/*/src/` → hot reload automatically → publish per plugin
-- **Config Changes**: Edit `bos.config.json` → publish with `bos publish --deploy`
-- **Host/Auth Changes**: These live in the parent `everything.dev` repository — submit PRs upstream
-
-### Before Committing
-
-Always run these commands before committing:
-
-```bash
-bun test        # Run all tests
-bun typecheck   # Type check all packages
-bun lint        # Run linting
-```
-
-### Changesets
-
-We use [Changesets](https://github.com/changesets/changesets) for versioning:
-
-**When to add a changeset:**
-- Any user-facing change (features, fixes, deprecations)
-- Breaking changes
-- Skip for: docs-only changes, internal refactors, test-only changes
-
-**Create a changeset:**
-```bash
-bun run changeset
-# Follow prompts to select packages and describe changes
-```
-
-The release workflow (`.github/workflows/release.yml`) handles versioning and GitHub releases automatically on merge to main.
-
-### Git Workflow
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed contribution guidelines including branch naming, semantic commits, and PR process.
-
-## Documentation
-
-- **[AGENTS.md](./AGENTS.md)** — Quick operational guide for AI agents
-- **[CONTRIBUTING.md](./CONTRIBUTING.md)** — Contribution guidelines and git workflow
-- **[LLM.txt](./LLM.txt)** — Deep technical reference for implementation
-- **[API README](./api/README.md)** — API plugin documentation
-- **[UI README](./ui/README.md)** — Frontend documentation
-
-**Documentation Purpose:**
-- `README.md` (this file) — Human quick start and overview
-- `AGENTS.md` — Agent operational shortcuts
-- `CONTRIBUTING.md` — How to contribute (branch, commit, PR workflow)
-- `LLM.txt` — Technical deep-dive for implementation details
-- Package READMEs (api/, ui/) — Package-specific details
-
-## Architecture
-
-**Tenant runtime** extending the everything.dev host via Module Federation:
-
-```
-┌─────────────────────────────────────────────────────────┐
-│            everything.dev host (remote)                 │
-│  Hono.js + oRPC + bos.config.json loader                │
-│  ┌──────────────────┐      ┌──────────────────┐         │
-│  │ Module Federation│      │ every-plugin      │         │
-│  │ Runtime          │      │ Runtime           │         │
-│  └────────┬─────────┘      └────────┬─────────┘         │
-│           ↓                         ↓                   │
-│  Loads nearbuilders UI      Loads API + Auth Plugins     │
-└───────────┬─────────────────────────┬───────────────────┘
-            ↓                         ↓
-┌───────────────────────┐ ┌─────────────────────────────────┐
-│  nearbuilders.org UI   │ │  API + 3 Domain Plugins        │
-│  Builder profiles      │ │  ┌─────────┬──────────┬──────┐│
-│  Project board          │ │  │ builders│ projects │ apps  ││
-│  App discovery          │ │  │profiles │ideas/    │FastKV ││
-│  NEAR wallet login      │ │  │+modera- │upvotes   │registry││
-│  Admin dashboard        │ │  │tion     │          │      ││
-└───────────────────────┘ │  └─────────┴──────────┴──────┘│
-                          └─────────────────────────────────┘
-```
-
-### Plugins
-
-Business logic lives in independent plugins loaded via Module Federation:
-
-- **`plugins/builders/`** — Builder profiles with moderation (pending/approved/rejected), skills, NEAR Social cross-referencing, and public directory search
-- **`plugins/projects/`** — Projects and ideas with upvote ranking, markdown editing, GitHub README integration, visibility controls, and on-chain app linking
-- **`plugins/apps/`** — FastKV app discovery, runtime config inspection, and on-chain metadata publishing with NEAR delegate actions
-
-Each plugin has its own `contract.ts` (oRPC routes + Zod schemas), `index.ts` (plugin factory), `rspack.config.js`, and `package.json`.
-
-The API composes across all three plugins in-process via `createPlugin.withPlugins<PluginsClient>()`, so `apiClient.builders.*()`, `apiClient.projects.*()`, and `apiClient.apps.*()` all work without HTTP roundtrips.
-
-### Key Features
-
-- ✅ **Builder Directory** — Curated builder profiles with admin moderation, skills badges, and NEAR Social integration
-- ✅ **Project Board** — Live-ranked projects and ideas with upvote/downvote, markdown editing, and GitHub linking
-- ✅ **App Registry** — Browse, inspect, and publish on-chain runtime apps via FastKV with NEAR delegate actions
-- ✅ **Runtime Configuration** — All URLs from `bos.config.json` (no rebuild needed for URL changes)
-- ✅ **Independent Deployment** — UI, API, and each plugin deploy separately
-- ✅ **Type Safety** — End-to-end with oRPC contracts and Zod schemas
-- ✅ **Tenant Architecture** — Extends everything.dev host, inherits auth and API shell
-
-## Configuration
-
-All runtime configuration lives in `bos.config.json`. The key difference from the parent platform is the `extends` field:
-
-```json
-{
-  "extends": "bos://dev.everything.near/everything.dev",
-  "account": "work.efiz.near",
-  "domain": "nearbuilders.org",
-  "title": "NEAR Builders",
-  "description": "The open platform for builders on NEAR.",
-  "testnet": "dev.allthethings.testnet",
-  "plugins": {
-    "apps": {
-      "development": "local:plugins/apps",
-      "variables": {
-        "registryNamespace": "dev.everything.near"
-      },
-      "routes": ["ui/src/routes/_layout/apps/**"],
-      "sidebar": [
-        { "icon": "Globe", "label": "apps", "roleRequired": "anon" }
-      ]
-    },
-    "projects": {
-      "development": "local:plugins/projects",
-      "routes": ["ui/src/routes/_layout/_authenticated/projects/**"],
-      "sidebar": [
-        { "icon": "FolderKanban", "label": "projects" }
-      ]
-    },
-    "builders": {
-      "development": "local:plugins/builders",
-      "routes": ["ui/src/routes/_layout/builders/**"]
-    }
-  }
-}
-```
-
-The host, auth, and API shell are loaded from the parent runtime. This repository provides the UI and the three domain plugins.
-
-### Environment Variables
-
-```bash
-# Host (inherited from everything.dev)
-CORS_ORIGIN=http://localhost:3000
-TENANT_WHITELIST=
-ALLOW_UNTRUSTED_SSR=
-
-# API
-API_DATABASE_URL=postgres://everythingdev:everythingdev@localhost:5432/api_db
-
-# Auth (inherited)
-AUTH_DATABASE_URL=postgres://everythingdev:everythingdev@localhost:5433/auth_db
-BETTER_AUTH_SECRET=
-
-# plugins.projects
-PROJECTS_DATABASE_URL=postgres://everythingdev:everythingdev@localhost:5435/projects_db
-
-# plugins.builders
-BUILDERS_DATABASE_URL=postgres://everythingdev:everythingdev@localhost:5434/builders_db
-```
-
-See [LLM.txt](./LLM.txt) for the complete configuration reference.
+Projects and ideas get upvote ranking, markdown editing, GitHub README integration, and on-chain app linking.
 
 ## Railway
 
@@ -283,6 +66,7 @@ This is a tenant deployment — the Docker image inherits from the parent and ov
 - Staging: `ghcr.io/nearbuilders/everything-dev:staging`
 
 Required runtime vars (in addition to inherited ones):
+
 - `APP_ENV` — `production` or `staging`
 - `API_DATABASE_URL` — API database connection string
 - `PROJECTS_DATABASE_URL` — Projects plugin database
@@ -304,6 +88,7 @@ Biome is configured in `biome.json` at the project root. Generated files (like `
 ## Tech Stack
 
 **Frontend:**
+
 - React 19 + TanStack Router (file-based) + TanStack Query
 - Tailwind CSS v4 + shadcn/ui components
 - Module Federation for microfrontend architecture
@@ -311,17 +96,35 @@ Biome is configured in `biome.json` at the project root. Generated files (like `
 - Project board with live upvote ranking (SSE)
 
 **Backend:**
+
 - Hono.js server + oRPC (type-safe RPC + OpenAPI)
 - [every-plugin](https://plugin.everything.dev/) architecture for modular APIs
 - Effect-TS for service composition
-- FastKV for on-chain app metadata
 
 **Database & Auth:**
+
 - PostgreSQL + Drizzle ORM (4 databases: api, auth, projects, builders)
 - Better-Auth with NEAR SIWN (inherited from everything.dev)
 
+## IronClaw Skills
+
+This repository ships two [IronClaw](https://ironclaw.com) skills that give AI agents working knowledge of the NEAR Builders platform. Place the `skills/` directory in your IronClaw workspace (or `~/.ironclaw/skills/` for global access) and the agent will activate them when relevant.
+
+- **near-builders** — Discover, search, and manage builder profiles. Activates on mentions of builders, talent search, or the NEAR Builders directory.
+- **near-projects** — Create, discover, and manage projects and ideas. Activates on mentions of projects, ideas, hackathons, funding, or pitching.
+
+```bash
+# Install skills globally
+cp -r skills/near-builders ~/.ironclaw/skills/
+cp -r skills/near-projects ~/.ironclaw/skills/
+ironclaw skills list   # Verify they loaded
+```
+
+Browse more skills at [IronHub](https://hub.ironclaw.com).
+
 ## Related Projects
 
+- **[IronClaw](https://ironclaw.com)** — Secure AI agent OS with sandboxed skills and tools
 - **[everything.dev](https://everything.dev)** — The parent runtime platform that nearbuilders.org extends
 - **[every-plugin](https://plugin.everything.dev/)** — Plugin framework for modular APIs with typed contracts and runtime composition
 - **[near-kit](https://kit.near.tools)** — Unified NEAR Protocol SDK
