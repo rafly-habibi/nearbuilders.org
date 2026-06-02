@@ -41,6 +41,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   },
   head: ({ loaderData }) => {
     const runtimeConfig = loaderData?.runtimeConfig;
+    const assetsUrl = runtimeConfig?.ui?.url ?? runtimeConfig?.assetsUrl ?? "";
     const runtimeBasePath = runtimeConfig?.runtime?.runtimeBasePath ?? "/";
     const siteUrl = runtimeConfig?.hostUrl
       ? `${runtimeConfig.hostUrl}${runtimeBasePath === "/" ? "" : runtimeBasePath}`
@@ -65,16 +66,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         },
         { title },
         { name: "description", content: description },
-        {
-          name: "theme-color",
-          media: "(prefers-color-scheme: light)",
-          content: "#ffffff",
-        },
-        {
-          name: "theme-color",
-          media: "(prefers-color-scheme: dark)",
-          content: "#0d1520",
-        },
+        { name: "theme-color", content: "#ffffff" },
         { name: "color-scheme", content: "light dark" },
         { name: "application-name", content: title },
         { name: "mobile-web-app-capable", content: "yes" },
@@ -85,7 +77,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         { name: "format-detection", content: "telephone=no" },
         { name: "robots", content: "index, follow" },
         ...getSocialImageMeta({
-          imageUrl: "/metadata.png",
+          imageUrl: `${assetsUrl}/metadata.png`,
           title,
           description,
           siteName: title,
@@ -94,28 +86,28 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         }),
       ],
       links: [
-        { rel: "stylesheet", href: "/static/css/async/style.css" },
+        { rel: "stylesheet", href: `${assetsUrl}/static/css/index.css` },
         { rel: "preconnect", href: "https://fonts.googleapis.com" },
         {
           rel: "preconnect",
           href: "https://fonts.gstatic.com",
           crossOrigin: "anonymous",
         },
-        { rel: "shortcut icon", href: "/favicon.ico" },
-        { rel: "icon", type: "image/svg+xml", href: "/icon.svg" },
-        { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32x32.png" },
-        { rel: "icon", type: "image/png", sizes: "16x16", href: "/favicon-16x16.png" },
+        { rel: "shortcut icon", href: `${assetsUrl}/favicon.ico` },
+        { rel: "icon", type: "image/svg+xml", href: `${assetsUrl}/icon.svg` },
+        { rel: "icon", type: "image/png", sizes: "32x32", href: `${assetsUrl}/favicon-32x32.png` },
+        { rel: "icon", type: "image/png", sizes: "16x16", href: `${assetsUrl}/favicon-16x16.png` },
         {
           rel: "apple-touch-icon",
           sizes: "180x180",
-          href: "/apple-touch-icon.png",
+          href: `${assetsUrl}/apple-touch-icon.png`,
         },
-        { rel: "manifest", href: "/manifest.json" },
+        { rel: "manifest", href: `${assetsUrl}/manifest.json` },
         ...(siteUrl ? [{ rel: "canonical", href: siteUrl }] : []),
       ],
       scripts: [
         ...getRemoteScripts({
-          assetsUrl: "",
+          assetsUrl,
           runtimeConfig: runtimeConfig ?? undefined,
           containerName: "ui",
           hydratePath: "./Hydrate",

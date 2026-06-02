@@ -54,7 +54,7 @@ function EditProjectPage() {
 
   const projectQuery = useQuery({
     queryKey: ["project", projectId],
-    queryFn: () => apiClient.projects.getProject({ id: projectId }),
+    queryFn: () => apiClient.getProject({ id: projectId }),
   });
 
   const project = projectQuery.data?.data;
@@ -81,7 +81,7 @@ function EditProjectPage() {
 
   const updateMutation = useMutation({
     mutationFn: (values: ProjectFormValues) =>
-      apiClient.projects.updateProject({
+      apiClient.updateProject({
         id: projectId,
         kind: values.kind,
         title: values.title.trim(),
@@ -114,7 +114,7 @@ function EditProjectPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => apiClient.projects.deleteProject({ id: projectId }),
+    mutationFn: () => apiClient.deleteProject({ id: projectId }),
     onSuccess: () => {
       toast.success("Deleted");
       queryClient.invalidateQueries({ queryKey: ["projects"] });

@@ -43,7 +43,7 @@ function Home() {
   const { data: projectsData, isLoading: projectsLoading } = useQuery({
     queryKey: ["projects-personal", nearAccountId],
     queryFn: () =>
-      apiClient.projects.listProjects({
+      apiClient.listProjects({
         limit: RECENT_PROJECTS_LIMIT,
         ownerId: nearAccountId ?? undefined,
       }),
@@ -52,7 +52,7 @@ function Home() {
 
   const { data: builderResult, isLoading: builderLoading } = useQuery({
     queryKey: ["my-builder-profile", user?.id, nearAccountId],
-    queryFn: () => apiClient.builders.getMyBuilderProfile({}),
+    queryFn: () => apiClient.getMyBuilderProfile({}),
     enabled: Boolean(user && !user.isAnonymous),
   });
 

@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_layout/apps/$accountId/$gatewayId")({
     await queryClient.prefetchQuery({
       queryKey: ["app", params.accountId, params.gatewayId],
       queryFn: () =>
-        apiClient.apps.getRegistryApp({
+        apiClient.getRegistryApp({
           accountId: params.accountId,
           gatewayId: params.gatewayId,
         }),
@@ -72,18 +72,18 @@ function AppDetailPage() {
 
   const appQuery = useSuspenseQuery({
     queryKey: ["app", accountId, gatewayId],
-    queryFn: () => apiClient.apps.getRegistryApp({ accountId, gatewayId }),
+    queryFn: () => apiClient.getRegistryApp({ accountId, gatewayId }),
     staleTime: 30_000,
   });
 
   const projectsQuery = useQuery({
     queryKey: ["app-projects", accountId, gatewayId],
-    queryFn: () => apiClient.projects.listProjectsForApp({ accountId, domain: gatewayId }),
+    queryFn: () => apiClient.listProjectsForApp({ accountId, domain: gatewayId }),
   });
 
   const statusQuery = useQuery({
     queryKey: ["registry-status"],
-    queryFn: () => apiClient.apps.getRegistryStatus(),
+    queryFn: () => apiClient.getRegistryStatus(),
     staleTime: 60_000,
   });
 
@@ -126,7 +126,7 @@ function AppDetailPage() {
   const prepareMetadataMutation = useMutation({
     mutationFn: async () => {
       if (!nearAccountId) throw new Error("Connect a NEAR wallet to publish metadata.");
-      return apiClient.apps.prepareRegistryMetadataWrite({
+      return apiClient.prepareRegistryMetadataWrite({
         accountId,
         gatewayId,
         claimedBy: nearAccountId,

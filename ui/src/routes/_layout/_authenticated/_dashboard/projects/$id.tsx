@@ -74,7 +74,7 @@ function ProjectDetailPage() {
 
   const projectQuery = useQuery({
     queryKey: ["project", projectId],
-    queryFn: () => apiClient.projects.getProject({ id: projectId }),
+    queryFn: () => apiClient.getProject({ id: projectId }),
   });
 
   const project = projectQuery.data?.data;
@@ -102,7 +102,7 @@ function ProjectDetailPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => apiClient.projects.deleteProject({ id: projectId }),
+    mutationFn: () => apiClient.deleteProject({ id: projectId }),
     onSuccess: () => {
       toast.success("Deleted");
       queryClient.invalidateQueries({ queryKey: ["projects"] });

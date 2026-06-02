@@ -32,7 +32,7 @@ export const Route = createFileRoute("/_layout/apps/")({
       queryClient.prefetchInfiniteQuery({
         queryKey: ["apps"],
         queryFn: ({ pageParam }) =>
-          apiClient.apps.listRegistryApps({
+          apiClient.listRegistryApps({
             limit: PAGE_SIZE,
             cursor: pageParam as string | undefined,
           }),
@@ -40,7 +40,7 @@ export const Route = createFileRoute("/_layout/apps/")({
       }),
       queryClient.prefetchQuery({
         queryKey: ["registry-status"],
-        queryFn: () => apiClient.apps.getRegistryStatus(),
+        queryFn: () => apiClient.getRegistryStatus(),
         staleTime: 60_000,
       }),
     ]);
@@ -83,15 +83,14 @@ function AppsIndex() {
     isFetchingNextPage,
   } = useInfiniteQuery({
     queryKey: ["apps"],
-    queryFn: ({ pageParam }) =>
-      apiClient.apps.listRegistryApps({ limit: PAGE_SIZE, cursor: pageParam }),
+    queryFn: ({ pageParam }) => apiClient.listRegistryApps({ limit: PAGE_SIZE, cursor: pageParam }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => (lastPage.meta.hasMore ? lastPage.meta.nextCursor : undefined),
   });
 
   const statusQuery = useQuery({
     queryKey: ["registry-status"],
-    queryFn: () => apiClient.apps.getRegistryStatus(),
+    queryFn: () => apiClient.getRegistryStatus(),
     staleTime: 60_000,
   });
 
@@ -104,7 +103,7 @@ function AppsIndex() {
   const previewDetailQuery = useQuery({
     queryKey: ["app", previewApp?.accountId, previewApp?.gatewayId],
     queryFn: () =>
-      apiClient.apps.getRegistryApp({
+      apiClient.getRegistryApp({
         accountId: previewApp!.accountId,
         gatewayId: previewApp!.gatewayId,
       }),

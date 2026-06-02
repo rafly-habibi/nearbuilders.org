@@ -618,7 +618,7 @@ function useInfiniteBuilders(
   const fetch = useCallback(
     async (cursor?: string, reset = false) => {
       try {
-        const result = await apiClient.builders.listBuilders({
+        const result = await apiClient.listBuilders({
           search: search || undefined,
           limit,
           cursor,

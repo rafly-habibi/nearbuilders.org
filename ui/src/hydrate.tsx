@@ -1,3 +1,4 @@
+import "./styles.css";
 import { createApiClient, createAuthClient, getRuntimeConfig } from "./app";
 
 declare global {

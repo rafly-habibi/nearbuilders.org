@@ -8,6 +8,7 @@ import type { PluginsClient } from "./lib/plugins-types.gen";
 
 type ApiContext = {
   userId?: string;
+  walletAddress?: string;
   user?: {
     id: string;
     role?: string;
@@ -15,6 +16,11 @@ type ApiContext = {
     name?: string;
   };
   organizationId?: string;
+  apiKey?: {
+    id: string;
+    name: string | null;
+    permissions: Record<string, string[]> | null;
+  };
   reqHeaders?: Headers;
   getRawBody?: () => Promise<string>;
 };
@@ -29,7 +35,10 @@ type ProposalData = {
 function pluginContext(context: ApiContext) {
   return {
     userId: context.userId,
+    walletAddress: context.walletAddress,
     user: context.user,
+    organizationId: context.organizationId,
+    apiKey: context.apiKey,
     reqHeaders: context.reqHeaders,
     getRawBody: context.getRawBody,
   };
@@ -121,6 +130,7 @@ export default createPlugin.withPlugins<PluginsClient>()({
 
   context: z.object({
     userId: z.string().optional(),
+    walletAddress: z.string().optional(),
     user: z
       .object({
         id: z.string(),
@@ -130,6 +140,13 @@ export default createPlugin.withPlugins<PluginsClient>()({
       })
       .optional(),
     organizationId: z.string().optional(),
+    apiKey: z
+      .object({
+        id: z.string(),
+        name: z.string().nullable(),
+        permissions: z.record(z.string(), z.array(z.string())).nullable(),
+      })
+      .optional(),
     reqHeaders: z.custom<Headers>().optional(),
     getRawBody: z.custom<() => Promise<string>>().optional(),
   }),
@@ -322,6 +339,62 @@ export default createPlugin.withPlugins<PluginsClient>()({
           yield event;
         }
       }),
+
+      listProjects: builder.listProjects.handler(async ({ input, context }) => {
+        return await services.plugins.projects(pluginContext(context)).listProjects(input);
+      }),
+
+      getProject: builder.getProject.handler(async ({ input, context }) => {
+        return await services.plugins.projects(pluginContext(context)).getProject(input);
+      }),
+
+      updateProject: builder.updateProject.use(requireAuth).handler(async ({ input, context }) => {
+        return await services.plugins.projects(pluginContext(context)).updateProject(input);
+      }),
+
+      deleteProject: builder.deleteProject.use(requireAuth).handler(async ({ input, context }) => {
+        return await services.plugins.projects(pluginContext(context)).deleteProject(input);
+      }),
+
+      listProjectsForApp: builder.listProjectsForApp.handler(async ({ input, context }) => {
+        return await services.plugins.projects(pluginContext(context)).listProjectsForApp(input);
+      }),
+
+      listBuilders: builder.listBuilders.handler(async ({ input, context }) => {
+        return await services.plugins.builders(pluginContext(context)).listBuilders(input);
+      }),
+
+      getBuilder: builder.getBuilder.handler(async ({ input, context }) => {
+        return await services.plugins.builders(pluginContext(context)).getBuilder(input);
+      }),
+
+      getMyBuilderProfile: builder.getMyBuilderProfile
+        .use(requireAuth)
+        .handler(async ({ input, context }) => {
+          return await services.plugins.builders(pluginContext(context)).getMyBuilderProfile(input);
+        }),
+
+      listRegistryApps: builder.listRegistryApps.handler(async ({ input }) => {
+        return await services.plugins.apps().listRegistryApps(input);
+      }),
+
+      getRegistryAppsByAccount: builder.getRegistryAppsByAccount.handler(async ({ input }) => {
+        return await services.plugins.apps().getRegistryAppsByAccount(input);
+      }),
+
+      getRegistryApp: builder.getRegistryApp.handler(async ({ input }) => {
+        return await services.plugins.apps().getRegistryApp(input);
+      }),
+
+      getRegistryStatus: builder.getRegistryStatus.handler(async () => {
+        return await services.plugins.apps().getRegistryStatus();
+      }),
+
+      prepareRegistryMetadataWrite: builder.prepareRegistryMetadataWrite.handler(
+        async ({ input }) => {
+          return await services.plugins.apps().prepareRegistryMetadataWrite(input);
+        },
+      ),
     };
   },
 });

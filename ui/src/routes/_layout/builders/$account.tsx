@@ -31,7 +31,7 @@ function BuilderProfilePage() {
 
   const { data: builderResult, isLoading } = useQuery({
     queryKey: ["builder", account],
-    queryFn: () => apiClient.builders.getBuilder({ nearAccount: account }),
+    queryFn: () => apiClient.getBuilder({ nearAccount: account }),
     retry: false,
   });
 
@@ -57,7 +57,7 @@ function LoadedProfile({ account, builder }: { account: string; builder: Builder
   const { data: projectsResult, isLoading: projectsLoading } = useQuery({
     queryKey: ["builder-projects", account],
     queryFn: () =>
-      apiClient.projects.listProjects({
+      apiClient.listProjects({
         ownerId: account,
         visibility: "public",
         limit: 6,

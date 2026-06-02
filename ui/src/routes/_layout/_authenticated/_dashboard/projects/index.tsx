@@ -72,7 +72,7 @@ export const Route = createFileRoute("/_layout/_authenticated/_dashboard/project
     void queryClient.prefetchInfiniteQuery({
       queryKey: ["projects", activeKind, null, false],
       queryFn: ({ pageParam }) =>
-        apiClient.projects.listProjects({
+        apiClient.listProjects({
           limit: PAGE_SIZE,
           cursor: pageParam as string | undefined,
           kind: activeKind === "all" ? undefined : activeKind,
@@ -163,7 +163,7 @@ function ProjectsList() {
   } = useInfiniteQuery({
     queryKey: listQueryKey,
     queryFn: ({ pageParam }) =>
-      apiClient.projects.listProjects({
+      apiClient.listProjects({
         limit: PAGE_SIZE,
         cursor: pageParam,
         kind: activeKind === "all" ? undefined : activeKind,
@@ -253,7 +253,7 @@ function ProjectsList() {
 
   const selectedProjectQuery = useQuery({
     queryKey: ["project", selectedProjectId],
-    queryFn: () => apiClient.projects.getProject({ id: selectedProjectId! }),
+    queryFn: () => apiClient.getProject({ id: selectedProjectId! }),
     enabled: Boolean(selectedProjectId),
   });
 

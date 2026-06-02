@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_layout/apps/$accountId/")({
     const { queryClient, apiClient } = context;
     await queryClient.prefetchQuery({
       queryKey: ["apps-account", params.accountId],
-      queryFn: () => apiClient.apps.getRegistryAppsByAccount({ accountId: params.accountId }),
+      queryFn: () => apiClient.getRegistryAppsByAccount({ accountId: params.accountId }),
       staleTime: 30_000,
     });
     return { accountId: params.accountId };
@@ -40,7 +40,7 @@ function AccountAppsPage() {
 
   const accountQuery = useSuspenseQuery({
     queryKey: ["apps-account", accountId],
-    queryFn: () => apiClient.apps.getRegistryAppsByAccount({ accountId }),
+    queryFn: () => apiClient.getRegistryAppsByAccount({ accountId }),
     staleTime: 30_000,
   });
 

@@ -41,6 +41,13 @@ export default createPlugin({
         name: z.string().optional(),
       })
       .optional(),
+    apiKey: z
+      .object({
+        id: z.string(),
+        name: z.string().nullable(),
+        permissions: z.record(z.string(), z.array(z.string())).nullable(),
+      })
+      .optional(),
     reqHeaders: z.custom<Headers>().optional(),
     getRawBody: z.custom<() => Promise<string>>().optional(),
   }),
@@ -61,19 +68,22 @@ export default createPlugin({
   shutdown: () => Effect.log("[Proposals] Shutdown"),
 
   createRouter: (services, builder) => {
-    const requireAuth = builder.middleware(async ({ context, next }) => {
-      if (!context.user || !context.userId) {
-        throw new ORPCError("UNAUTHORIZED", { message: "Authentication required" });
-      }
-      return next({ context });
-    });
-
     const requireAdmin = builder.middleware(async ({ context, next }) => {
       if (!context.user || !context.userId) {
         throw new ORPCError("UNAUTHORIZED", { message: "Authentication required" });
       }
       if (context.user.role !== "admin") {
         throw new ORPCError("FORBIDDEN", { message: "Admin access required" });
+      }
+      return next({ context });
+    });
+
+    const requireAuthOrApiKey = builder.middleware(async ({ context, next }) => {
+      if (!context.user && !context.userId && !context.apiKey) {
+        throw new ORPCError("UNAUTHORIZED", {
+          message: "Authentication required",
+          data: { hint: "Sign in or provide an API key" },
+        });
       }
       return next({ context });
     });
@@ -92,11 +102,12 @@ export default createPlugin({
     };
 
     return {
-      propose: builder.propose.use(requireAuth).handler(async ({ input, context }) => {
+      propose: builder.propose.use(requireAuthOrApiKey).handler(async ({ input, context }) => {
+        const actorId = context.userId ?? context.apiKey?.id ?? "unknown";
         const result = await runEffect(
           services.proposal.propose({
             ...input,
-            actorId: context.userId!,
+            actorId,
             actor: context.user,
           }),
         );

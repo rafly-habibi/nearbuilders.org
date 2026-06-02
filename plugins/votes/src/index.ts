@@ -132,6 +132,14 @@ export default createPlugin({
         name: z.string().optional(),
       })
       .optional(),
+    organizationId: z.string().optional(),
+    apiKey: z
+      .object({
+        id: z.string(),
+        name: z.string().nullable(),
+        permissions: z.record(z.string(), z.array(z.string())).nullable(),
+      })
+      .optional(),
     reqHeaders: z.custom<Headers>().optional(),
     getRawBody: z.custom<() => Promise<string>>().optional(),
   }),
