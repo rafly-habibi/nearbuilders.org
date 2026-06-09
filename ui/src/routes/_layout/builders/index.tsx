@@ -614,7 +614,10 @@ function BuilderCard({
             </motion.div>
           </div>
         )}
-        <ArrowRight size={14} className="text-brand-cyan group-hover:translate-x-0.5 transition-transform" />
+        <ArrowRight
+          size={14}
+          className="text-brand-cyan group-hover:translate-x-0.5 transition-transform"
+        />
       </div>
     </Link>
   );
