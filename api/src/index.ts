@@ -6,6 +6,11 @@ import type { ProposalSchema } from "../../plugins/proposals/src/contract";
 import { contract } from "./contract";
 import { createAuthMiddleware } from "./lib/auth";
 import type { PluginsClient } from "./lib/plugins-types.gen";
+import {
+  assertProjectProposalOwner,
+  createProjectProposalOwnerContext,
+  resolveProjectProposalOwner,
+} from "./lib/project-proposal-owner";
 
 type ApiContext = {
   userId?: string;
@@ -59,6 +64,15 @@ function readStringArray(value: unknown): string[] | undefined {
   return value.filter((item): item is string => typeof item === "string");
 }
 
+function isNotFoundError(error: unknown): boolean {
+  if (error instanceof ORPCError) return error.code === "NOT_FOUND";
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { code?: unknown }).code === "NOT_FOUND"
+  );
+}
+
 type CreateCallback = (
   plugins: Omit<PluginsClient, "auth">,
   proposal: ProposalData,
@@ -90,22 +104,38 @@ const createCallbacks: Record<string, CreateCallback> = {
   },
   projects: async (plugins, proposal, context) => {
     const payload = requireObjectPayload(proposal.payload);
-    const result = await plugins.projects(pluginContext(context)).createProject({
+    const ownerId = resolveProjectProposalOwner(payload, proposal.createdBy);
+    const projectsClient = plugins.projects(pluginContext(context));
+    const visibility =
+      payload.visibility === "private" || payload.visibility === "unlisted"
+        ? payload.visibility
+        : "public";
+
+    try {
+      const updated = await projectsClient.updateProject({
+        id: proposal.entityId,
+        visibility,
+      });
+      assertProjectProposalOwner(updated.ownerId, ownerId);
+      return updated.id;
+    } catch (error) {
+      if (!isNotFoundError(error)) throw error;
+    }
+
+    const proposalOwnerContext = createProjectProposalOwnerContext(context, ownerId);
+    const result = await plugins.projects(pluginContext(proposalOwnerContext)).createProject({
       id: proposal.entityId,
       kind: payload.kind === "idea" ? "idea" : "project",
       title: readString(payload.title) ?? proposal.entityId,
       slug: readString(payload.slug) ?? proposal.entityId,
       description: readString(payload.description),
       content: readString(payload.content),
-      visibility:
-        payload.visibility === "private" || payload.visibility === "unlisted"
-          ? payload.visibility
-          : "public",
+      visibility,
       repository: readString(payload.repository),
       organizationId: readString(payload.organizationId),
-      ownerId: readString(payload.ownerId) ?? proposal.createdBy,
       domain: readString(payload.domain),
     });
+    assertProjectProposalOwner(result.ownerId, ownerId);
     return result.id;
   },
 };
@@ -118,7 +148,16 @@ const removeCallbacks: Record<string, RemoveCallback> = {
   },
   projects: async (plugins, proposal, context) => {
     const projectId = proposal.appliedResourceId ?? proposal.entityId;
-    await plugins.projects(pluginContext(context)).deleteProject({ id: projectId });
+    // The project is the owner's personal project that predates the proposal,
+    // so removing the approval un-publishes it instead of deleting it.
+    try {
+      await plugins.projects(pluginContext(context)).updateProject({
+        id: projectId,
+        visibility: "private",
+      });
+    } catch (error) {
+      if (!isNotFoundError(error)) throw error;
+    }
   },
 };
 
@@ -355,6 +394,23 @@ export default createPlugin.withPlugins<PluginsClient>()({
 
       getProject: builder.getProject.handler(async ({ input, context }) => {
         return await services.plugins.projects(pluginContext(context)).getProject(input);
+      }),
+
+      createProject: builder.createProject.use(requireAuth).handler(async ({ input, context }) => {
+        const isAdmin = context.user?.role === "admin";
+        if (!isAdmin && !context.walletAddress) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "Link a NEAR account to create projects",
+          });
+        }
+        // Non-admin projects always start out non-public; going public requires
+        // an approved proposal.
+        const visibility =
+          !isAdmin && input.visibility === "public" ? "private" : (input.visibility ?? "private");
+        return await services.plugins.projects(pluginContext(context)).createProject({
+          ...input,
+          visibility,
+        });
       }),
 
       updateProject: builder.updateProject.use(requireAuth).handler(async ({ input, context }) => {
