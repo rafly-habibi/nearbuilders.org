@@ -108,7 +108,7 @@ export function NearProfile({
       <div
         className={`w-full overflow-hidden rounded-xl border border-border bg-card ${className}`}
       >
-        <div className="relative h-36 overflow-hidden bg-secondary">
+        <div className="relative h-36 bg-secondary">
           <div className="absolute inset-x-0 top-0 h-1 bg-brand-green" />
           <div className="absolute inset-x-0 bottom-0 h-px bg-border" />
           {backgroundUrl && (
