@@ -129,6 +129,12 @@ export class ProjectService extends Context.Tag("projects/ProjectService")<
       alternateUserId?: string,
     ) => Effect.Effect<ProjectDetail | null, ORPCError<string, unknown>>;
 
+    getProjectBySlug: (
+      slug: string,
+      userId?: string,
+      alternateUserId?: string,
+    ) => Effect.Effect<ProjectDetail | null, ORPCError<string, unknown>>;
+
     createProject: (
       input: {
         id?: string;
@@ -218,28 +224,17 @@ function isProjectOwner(projectOwnerId: string, userId?: string, alternateUserId
   return projectOwnerId === userId || projectOwnerId === alternateUserId;
 }
 
-const canViewProject = (db: any, projectId: string, userId?: string, alternateUserId?: string) =>
-  Effect.gen(function* () {
-    const results = (yield* Effect.promise(() =>
-      db.select().from(projects).where(eq(projects.id, projectId)).limit(1),
-    )) as any[];
+const canViewProjectRecord = (project: any, userId?: string, alternateUserId?: string) => {
+  if (project.visibility === "public" || project.visibility === "unlisted") {
+    return true;
+  }
 
-    const project = results[0];
+  if (!userId && !alternateUserId) {
+    return false;
+  }
 
-    if (!project) {
-      return false;
-    }
-
-    if (project.visibility === "public" || project.visibility === "unlisted") {
-      return true;
-    }
-
-    if (!userId && !alternateUserId) {
-      return false;
-    }
-
-    return isProjectOwner(project.ownerId, userId, alternateUserId);
-  });
+  return isProjectOwner(project.ownerId, userId, alternateUserId);
+};
 
 const canEditProject = (
   db: any,
@@ -322,6 +317,29 @@ function mapProject(p: any): Project {
   };
 }
 
+const mapProjectDetail = (db: any, project: any) =>
+  Effect.gen(function* () {
+    const apps = (yield* Effect.promise(() =>
+      db
+        .select()
+        .from(projectApps)
+        .where(eq(projectApps.projectId, project.id))
+        .orderBy(projectApps.createdAt),
+    )) as any[];
+
+    return {
+      ...mapProject(project),
+      apps: apps.map((a: any) => ({
+        id: a.id,
+        projectId: a.projectId,
+        accountId: a.accountId,
+        domain: a.domain,
+        createdByUserId: a.createdByUserId,
+        createdAt: toIsoString(a.createdAt),
+      })),
+    };
+  });
+
 export const ProjectServiceLive = Layer.effect(
   ProjectService,
   Effect.gen(function* () {
@@ -401,11 +419,6 @@ export const ProjectServiceLive = Layer.effect(
 
       getProject: (id, userId, alternateUserId) =>
         Effect.gen(function* () {
-          const canView = yield* canViewProject(db, id, userId, alternateUserId);
-          if (!canView) {
-            return null;
-          }
-
           const [project] = yield* Effect.promise(() =>
             db.select().from(projects).where(eq(projects.id, id)).limit(1),
           );
@@ -414,25 +427,22 @@ export const ProjectServiceLive = Layer.effect(
             return null;
           }
 
-          const apps = yield* Effect.promise(() =>
-            db
-              .select()
-              .from(projectApps)
-              .where(eq(projectApps.projectId, id))
-              .orderBy(projectApps.createdAt),
+          if (!canViewProjectRecord(project, userId, alternateUserId)) return null;
+          return yield* mapProjectDetail(db, project);
+        }),
+
+      getProjectBySlug: (slug, userId, alternateUserId) =>
+        Effect.gen(function* () {
+          const [project] = yield* Effect.promise(() =>
+            db.select().from(projects).where(eq(projects.slug, slug)).limit(1),
           );
 
-          return {
-            ...mapProject(project),
-            apps: apps.map((a: any) => ({
-              id: a.id,
-              projectId: a.projectId,
-              accountId: a.accountId,
-              domain: a.domain,
-              createdByUserId: a.createdByUserId,
-              createdAt: toIsoString(a.createdAt),
-            })),
-          };
+          if (!project) {
+            return null;
+          }
+
+          if (!canViewProjectRecord(project, userId, alternateUserId)) return null;
+          return yield* mapProjectDetail(db, project);
         }),
 
       createProject: (input, userId, userRole) =>
@@ -451,11 +461,7 @@ export const ProjectServiceLive = Layer.effect(
           }
 
           const [existing] = yield* Effect.promise(() =>
-            db
-              .select()
-              .from(projects)
-              .where(and(eq(projects.ownerId, effectiveOwnerId), eq(projects.slug, input.slug)))
-              .limit(1),
+            db.select().from(projects).where(eq(projects.slug, input.slug)).limit(1),
           );
 
           if (existing) {

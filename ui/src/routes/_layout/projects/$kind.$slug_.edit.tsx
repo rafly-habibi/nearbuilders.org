@@ -24,7 +24,7 @@ type SearchParams = ReturnType<typeof parseProjectListSearch> & {
   tab: "write" | "preview";
 };
 
-export const Route = createFileRoute("/_layout/projects/$kind/$id_/edit")({
+export const Route = createFileRoute("/_layout/projects/$kind/$slug_/edit")({
   validateSearch: (search: Record<string, unknown>): SearchParams => ({
     ...parseProjectListSearch(search),
     tab: search.tab === "preview" ? "preview" : "write",
@@ -44,12 +44,11 @@ export const Route = createFileRoute("/_layout/projects/$kind/$id_/edit")({
       { name: "description", content: "Edit a project or idea." },
     ],
   }),
-  loader: async ({ params }) => ({ projectId: params.id }),
   component: EditProjectPage,
 });
 
 function EditProjectPage() {
-  const { id: projectId } = Route.useParams();
+  const { slug } = Route.useParams();
   const navigate = useNavigate({ from: Route.fullPath });
   const queryClient = useQueryClient();
   const apiClient = useApiClient();
@@ -62,11 +61,12 @@ function EditProjectPage() {
   const isAdmin = session?.user?.role === "admin";
 
   const projectQuery = useQuery({
-    queryKey: ["project", projectId],
-    queryFn: () => apiClient.getProject({ id: projectId }),
+    queryKey: ["project", slug],
+    queryFn: () => apiClient.getProjectBySlug({ slug }),
   });
 
   const project = projectQuery.data?.data;
+  const projectId = project?.id;
 
   const defaultOwnerId =
     nearAccountId ??
@@ -83,7 +83,7 @@ function EditProjectPage() {
         project?.visibility !== "public" &&
         values.kind !== "result";
       const updated = await apiClient.updateProject({
-        id: projectId,
+        id: projectId!,
         kind: values.kind,
         title: values.title.trim(),
         description: values.description?.trim() || undefined,
@@ -103,7 +103,7 @@ function EditProjectPage() {
       if (submitForReview) {
         await apiClient.propose({
           pluginId: "projects",
-          entityId: projectId,
+          entityId: projectId!,
           payload: {
             kind: updated.kind,
             title: updated.title,
@@ -121,12 +121,12 @@ function EditProjectPage() {
     },
     onSuccess: ({ submitForReview }: { submitForReview: boolean }) => {
       toast.success(submitForReview ? "Saved \u2014 submitted for review to go public" : "Saved");
-      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["project", slug] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       queryClient.invalidateQueries({ queryKey: ["admin-proposals", "projects"] });
       navigate({
-        to: "/projects/$kind/$id",
-        params: { kind: project!.kind, id: projectId },
+        to: "/projects/$kind/$slug",
+        params: { kind: project!.kind, slug: project!.slug },
         search: {
           kind: search.kind,
           personal: search.personal,
@@ -138,7 +138,7 @@ function EditProjectPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => apiClient.deleteProject({ id: projectId }),
+    mutationFn: () => apiClient.deleteProject({ id: projectId! }),
     onSuccess: () => {
       toast.success("Deleted");
       queryClient.invalidateQueries({ queryKey: ["projects"] });
@@ -195,8 +195,8 @@ function EditProjectPage() {
           You don't have permission to edit this project.
         </p>
         <Link
-          to="/projects/$kind/$id"
-          params={{ kind: project.kind, id: projectId }}
+          to="/projects/$kind/$slug"
+          params={{ kind: project.kind, slug: project.slug }}
           search={{
             kind: search.kind,
             personal: search.personal,
@@ -213,7 +213,6 @@ function EditProjectPage() {
   return (
     <EditFormInner
       project={project}
-      projectId={projectId}
       isAdmin={isAdmin}
       defaultOwnerId={defaultOwnerId}
       search={search}
@@ -226,7 +225,6 @@ function EditProjectPage() {
 
 function EditFormInner({
   project,
-  projectId,
   isAdmin,
   defaultOwnerId,
   search,
@@ -235,7 +233,6 @@ function EditFormInner({
   deleteMutation,
 }: {
   project: any;
-  projectId: string;
   isAdmin: boolean;
   defaultOwnerId: string;
   search: SearchParams;
@@ -270,8 +267,8 @@ function EditFormInner({
         <div className="flex items-center gap-2">
           <Button asChild variant="ghost" size="icon-sm" aria-label="Back to project">
             <Link
-              to="/projects/$kind/$id"
-              params={{ kind: project.kind, id: projectId }}
+              to="/projects/$kind/$slug"
+              params={{ kind: project.kind, slug: project.slug }}
               search={{
                 kind: search.kind,
                 personal: search.personal,
@@ -314,8 +311,8 @@ function EditFormInner({
 
           <Button asChild size="sm" variant="outline">
             <Link
-              to="/projects/$kind/$id"
-              params={{ kind: project.kind, id: projectId }}
+              to="/projects/$kind/$slug"
+              params={{ kind: project.kind, slug: project.slug }}
               search={{
                 kind: search.kind,
                 personal: search.personal,

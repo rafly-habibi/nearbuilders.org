@@ -167,10 +167,10 @@ function ProjectsList() {
     [activeKind, isPersonalOnly, isPrivateOnly, ownerFilterId],
   );
 
-  const handleShare = useCallback((projectId: string, projectKind: ProjectKind) => {
+  const handleShare = useCallback((projectSlug: string, projectKind: string) => {
     const url =
       typeof window !== "undefined"
-        ? `${window.location.origin}/projects/${projectKind}/${projectId}`
+        ? `${window.location.origin}/projects/${projectKind}/${projectSlug}`
         : "";
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
@@ -347,10 +347,10 @@ function ProjectsList() {
     [fetchNextPage, hasNextPage, isFetchingNextPage],
   );
 
-  const handleMobileRowTap = (projectId: string, kind: ProjectKind) => {
+  const handleMobileRowTap = (projectSlug: string, projectKind: string) => {
     void navigate({
-      to: "/projects/$kind/$id",
-      params: { kind, id: projectId },
+      to: "/projects/$kind/$slug",
+      params: { kind: projectKind, slug: projectSlug },
       search: {
         kind: search.kind,
         personal: search.personal,
@@ -617,7 +617,7 @@ function ProjectsList() {
                   isDownvoting={
                     downvoteMutation.isPending && downvoteMutation.variables === project.id
                   }
-                  onMobileTap={() => handleMobileRowTap(project.id, project.kind)}
+                  onMobileTap={() => handleMobileRowTap(project.slug, project.kind)}
                   onDesktopSelect={() => handleDesktopRowSelect(project.id)}
                   onUpvote={() => runVote("up", project.id)}
                   onDownvote={() => runVote("down", project.id)}
@@ -761,7 +761,7 @@ function ProjectsList() {
                     type="button"
                     size="icon-sm"
                     variant="outline"
-                    onClick={() => handleShare(selectedProject.id, selectedProject.kind)}
+                    onClick={() => handleShare(selectedProject.slug, selectedProject.kind)}
                     title="Copy link"
                     className={copied ? "text-brand-accent" : ""}
                   >
@@ -770,8 +770,8 @@ function ProjectsList() {
 
                   <Button asChild size="sm">
                     <Link
-                      to="/projects/$kind/$id"
-                      params={{ kind: selectedProject.kind, id: selectedProject.id }}
+                      to="/projects/$kind/$slug"
+                      params={{ kind: selectedProject.kind, slug: selectedProject.slug }}
                       search={{
                         kind: search.kind,
                         personal: search.personal,
@@ -786,8 +786,8 @@ function ProjectsList() {
                   {canManageSelected && (
                     <Button asChild size="sm" variant="outline">
                       <Link
-                        to="/projects/$kind/$id/edit"
-                        params={{ kind: selectedProject.kind, id: selectedProject.id }}
+                        to="/projects/$kind/$slug/edit"
+                        params={{ kind: selectedProject.kind, slug: selectedProject.slug }}
                         search={{
                           tab: "write",
                           kind: search.kind,

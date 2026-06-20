@@ -42,12 +42,26 @@ export const Route = createFileRoute("/_layout/events/")({
   component: EventsPage,
 });
 
+function isCurrentUserOwner(
+  ownerId: string | null | undefined,
+  user:
+    | { id?: string | null; walletAddress?: string | null; role?: string | null }
+    | null
+    | undefined,
+  nearAccountId?: string | null,
+) {
+  if (!ownerId) return false;
+  return [nearAccountId, user?.walletAddress, user?.id].some((candidate) => candidate === ownerId);
+}
+
 function EventsPage() {
   const apiClient = useApiClient();
   const auth = useAuthClient();
   const { data: session } = useQuery(sessionQueryOptions(auth, undefined));
+  const nearAccountId = auth.near.getAccountId();
   const viewerKey = session?.user?.id ?? "anonymous";
   const canCreate = Boolean(session?.user && !session.user.isAnonymous);
+  const isAdmin = session?.user?.role === "admin";
   const [copied, setCopied] = useState<string | null>(null);
   const [tab, setTab] = useState<EventTab>("upcoming");
 
@@ -88,7 +102,8 @@ function EventsPage() {
   const monthGroups = useMemo(() => groupByMonth(visibleEvents), [visibleEvents]);
 
   const copyEventLink = (event: EventRecord) => {
-    const url = typeof window !== "undefined" ? `${window.location.origin}/events/${event.id}` : "";
+    const url =
+      typeof window !== "undefined" ? `${window.location.origin}/events/${event.slug}` : "";
     navigator.clipboard.writeText(url).then(() => {
       setCopied(event.id);
       toast.success("Link copied");
@@ -170,6 +185,9 @@ function EventsPage() {
                       <EventCard
                         event={event}
                         proposalStatus={eventProposalStatuses.get(event.id)}
+                        showStatus={
+                          isAdmin || isCurrentUserOwner(event.ownerId, session?.user, nearAccountId)
+                        }
                         copied={copied === event.id}
                         onShare={copyEventLink}
                       />
@@ -204,11 +222,13 @@ function Spine({ isPast, withDot }: { isPast?: boolean; withDot?: boolean }) {
 function EventCard({
   event,
   proposalStatus,
+  showStatus,
   copied,
   onShare,
 }: {
   event: EventRecord;
   proposalStatus?: EventProposalStatus;
+  showStatus: boolean;
   copied: boolean;
   onShare: (event: EventRecord) => void;
 }) {
@@ -216,13 +236,40 @@ function EventCard({
   const status = getEventCardStatus(event, proposalStatus);
   return (
     <Link
-      to="/events/$id"
-      params={{ id: event.id }}
-      className="group block min-w-0 rounded-lg border border-border bg-card px-4 py-3.5 transition-all duration-200 hover:shadow-lg sm:px-5 sm:py-4"
+      to="/events/$slug"
+      params={{ slug: event.slug }}
+      className="group relative block rounded-lg border border-border bg-card px-4 py-3.5 transition-all duration-200 hover:shadow-lg sm:px-5 sm:py-4"
     >
+      <div className="absolute right-4 top-3 flex items-center gap-2 sm:right-5">
+        {showStatus && (
+          <span
+            className={cn(
+              "shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-medium leading-5",
+              status.className,
+            )}
+          >
+            {status.label}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onShare(event);
+          }}
+          className={cn(
+            "shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-secondary hover:text-foreground group-hover:opacity-100",
+            copied && "text-brand-accent opacity-100",
+          )}
+          aria-label="Copy event link"
+        >
+          <Share2 size={14} />
+        </button>
+      </div>
       <div className="flex items-start gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-start justify-between gap-2">
+        <div className={cn("min-w-0 flex-1", showStatus ? "pr-32 sm:pr-36" : "pr-10")}>
+          <div className="flex items-start gap-3">
             <div className="flex min-w-0 items-center gap-1.5">
               <span
                 className={cn(
@@ -267,21 +314,7 @@ function EventCard({
             </p>
           )}
         </div>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onShare(event);
-          }}
-          className={cn(
-            "shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground",
-            copied && "text-brand-accent",
-          )}
-          aria-label="Copy event link"
-        >
-          <Share2 size={14} />
-        </button>
+
       </div>
     </Link>
   );

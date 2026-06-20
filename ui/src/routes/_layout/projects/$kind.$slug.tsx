@@ -29,7 +29,7 @@ import { VoteButton } from "@/components/ui/vote-button";
 import { fetchRepositoryReadme } from "@/lib/repository-content";
 import { isProjectKind, parseProjectListSearch } from "./-search";
 
-export const Route = createFileRoute("/_layout/projects/$kind/$id")({
+export const Route = createFileRoute("/_layout/projects/$kind/$slug")({
   validateSearch: parseProjectListSearch,
   beforeLoad: async ({ params }) => {
     if (!isProjectKind(params.kind)) throw redirect({ to: "/projects" });
@@ -37,8 +37,8 @@ export const Route = createFileRoute("/_layout/projects/$kind/$id")({
   loader: async ({ params, context }) => {
     const project = await context.queryClient
       .ensureQueryData({
-        queryKey: ["project", params.id],
-        queryFn: () => context.apiClient.getProject({ id: params.id }),
+        queryKey: ["project", params.slug],
+        queryFn: () => context.apiClient.getProjectBySlug({ slug: params.slug }),
       })
       .then((r) => r?.data ?? null)
       .catch(() => null);
@@ -96,7 +96,7 @@ function isCurrentUserOwner(
 }
 
 function ProjectDetailPage() {
-  const { id: projectId } = Route.useParams();
+  const { slug } = Route.useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const apiClient = useApiClient();
@@ -110,11 +110,12 @@ function ProjectDetailPage() {
   const nearAccountId = auth.near.getAccountId();
 
   const projectQuery = useQuery({
-    queryKey: ["project", projectId],
-    queryFn: () => apiClient.getProject({ id: projectId }),
+    queryKey: ["project", slug],
+    queryFn: () => apiClient.getProjectBySlug({ slug }),
   });
 
   const project = projectQuery.data?.data;
+  const projectId = project?.id;
   const canParticipate = Boolean(session?.user && !session.user.isAnonymous);
 
   const readmeQuery = useQuery({
@@ -128,18 +129,19 @@ function ProjectDetailPage() {
 
   const upvoteCountQuery = useQuery({
     queryKey: ["upvoteCount", projectId],
-    queryFn: () => apiClient.getUpvoteCount({ entityId: projectId }),
+    queryFn: () => apiClient.getUpvoteCount({ entityId: projectId! }),
+    enabled: Boolean(projectId),
   });
 
   const userVoteQuery = useQuery({
     queryKey: ["userVoteState", projectId],
-    queryFn: () => apiClient.getUserVote({ entityId: projectId }),
+    queryFn: () => apiClient.getUserVote({ entityId: projectId! }),
     select: (data): "up" | "down" | null => (data.hasUpvote ? "up" : null),
-    enabled: canParticipate,
+    enabled: canParticipate && Boolean(projectId),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => apiClient.deleteProject({ id: projectId }),
+    mutationFn: () => apiClient.deleteProject({ id: projectId! }),
     onSuccess: () => {
       toast.success("Deleted");
       queryClient.invalidateQueries({ queryKey: ["projects"] });
@@ -157,7 +159,7 @@ function ProjectDetailPage() {
   });
 
   const upvoteMutation = useMutation({
-    mutationFn: () => apiClient.upvote({ entityId: projectId }),
+    mutationFn: () => apiClient.upvote({ entityId: projectId! }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["upvoteCount", projectId] });
       queryClient.invalidateQueries({ queryKey: ["upvoteCounts"] });
@@ -167,7 +169,7 @@ function ProjectDetailPage() {
   });
 
   const downvoteMutation = useMutation({
-    mutationFn: () => apiClient.downvote({ entityId: projectId }),
+    mutationFn: () => apiClient.downvote({ entityId: projectId! }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["upvoteCount", projectId] });
       queryClient.invalidateQueries({ queryKey: ["upvoteCounts"] });
@@ -359,8 +361,8 @@ function ProjectDetailPage() {
             <>
               <Button asChild size="sm" variant="outline">
                 <Link
-                  to="/projects/$kind/$id/edit"
-                  params={{ kind: project.kind, id: projectId }}
+                  to="/projects/$kind/$slug/edit"
+                  params={{ kind: project.kind, slug: project.slug }}
                   search={{
                     tab: "write",
                     kind: search.kind,
@@ -448,7 +450,7 @@ function ProjectDetailPage() {
             )}
 
             {(project.kind === "scope" || project.kind === "result") && (
-              <MentionsSection projectId={projectId} />
+              <MentionsSection projectId={project.id} />
             )}
           </div>
         </div>
@@ -585,8 +587,8 @@ function MentionChip({
   };
   return (
     <Link
-      to="/projects/$kind/$id"
-      params={{ kind: item.kind, id: item.id }}
+      to="/projects/$kind/$slug"
+      params={{ kind: item.kind, slug: item.slug }}
       className="inline-flex items-center gap-1.5 rounded-md border border-border bg-secondary px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors"
     >
       <span className="text-muted-foreground">{kindIcons[item.kind]}</span>
